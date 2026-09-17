@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive discovery experience about supply, demand, market price, and quantity.">
+  <title>Market Pulse — A Supply &amp; Demand Discovery</title>
+  <style>
+    :root {
+      --ink: #14251f;
+      --muted: #56645e;
+      --paper: #f7f2e8;
+      --paper-2: #fffdf8;
+      --green: #126149;
+      --green-dark: #0b4534;
+      --lime: #c7e45b;
+      --orange: #ef7c45;
+      --orange-dark: #a74425;
+      --blue: #247ba0;
+      --red: #bd493f;
+      --line: #cfc8b9;
+      --shadow: 0 18px 48px rgba(20, 37, 31, .13);
+      --display: Georgia, "Times New Roman", serif;
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(18, 97, 73, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18, 97, 73, .035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 26px 26px;
+      font-family: var(--sans);
+      line-height: 1.5;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, a:focus-visible {
+      outline: 4px solid rgba(36, 123, 160, .35);
+      outline-offset: 3px;
+    }
+    [hidden] { display: none !important; }
+
+    .masthead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: auto minmax(220px, 620px) auto;
+      gap: 24px;
+      align-items: center;
+      min-height: 76px;
+      padding: 12px clamp(18px, 4vw, 64px);
+      border-bottom: 1px solid var(--line);
+      background: rgba(247, 242, 232, .94);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      gap: 11px;
+      align-items: center;
+      font-weight: 850;
+      letter-spacing: -.02em;
+      white-space: nowrap;
+    }
+    .brand-mark {
+      display: grid;
+      width: 41px;
+      height: 41px;
+      place-items: center;
+      color: white;
+      background: var(--green-dark);
+      border-radius: 50% 50% 50% 8px;
+      font-family: var(--display);
+      font-size: 19px;
+    }
+
+    .progress-track {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .progress-step {
+      position: relative;
+      padding-top: 17px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      text-align: center;
+    }
+    .progress-step::before {
+      position: absolute;
+      top: 2px;
+      left: 0;
+      width: 100%;
+      height: 7px;
+      content: "";
+      background: #ded8cb;
+    }
+    .progress-step:first-child::before { border-radius: 8px 0 0 8px; }
+    .progress-step:last-child::before { border-radius: 0 8px 8px 0; }
+    .progress-step.is-active::before,
+    .progress-step.is-done::before { background: var(--green); }
+    .progress-step.is-active { color: var(--green-dark); }
+
+    .ghost-btn {
+      border: 0;
+      border-bottom: 1px solid currentColor;
+      color: var(--green-dark);
+      background: transparent;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    main { min-height: calc(100vh - 76px); }
+    .screen {
+      display: none;
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: clamp(40px, 7vw, 88px) 0 72px;
+      animation: enter .45s ease both;
+    }
+    .screen.is-active { display: block; }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { text-wrap: balance; }
+    h1 {
+      max-width: 880px;
+      margin-bottom: 22px;
+      font-family: var(--display);
+      font-size: clamp(48px, 8vw, 100px);
+      font-weight: 500;
+      line-height: .95;
+      letter-spacing: -.055em;
+    }
+    h2 {
+      margin-bottom: 14px;
+      font-family: var(--display);
+      font-size: clamp(38px, 5.5vw, 70px);
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -.04em;
+    }
+    h3 { margin-bottom: 10px; font-size: 21px; line-height: 1.2; }
+    .lede {
+      max-width: 700px;
+      color: var(--muted);
+      font-size: clamp(18px, 2.2vw, 23px);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr);
+      gap: clamp(32px, 6vw, 88px);
+      align-items: center;
+    }
+    .start-card {
+      padding: 30px;
+      border: 1px solid var(--ink);
+      background: var(--paper-2);
+      box-shadow: 12px 12px 0 var(--green-dark);
+      transform: rotate(1deg);
+    }
+    .start-card .big-number {
+      display: block;
+      color: var(--orange-dark);
+      font-family: var(--display);
+      font-size: 92px;
+      line-height: .9;
+    }
+    .mini-list { margin: 22px 0 0; padding: 0; list-style: none; }
+    .mini-list li {
+      display: flex;
+      gap: 12px;
+      padding: 13px 0;
+      border-top: 1px solid var(--line);
+      font-weight: 700;
+    }
+    .mini-list b { color: var(--green); }
+
+    .primary-btn, .secondary-btn {
+      display: inline-flex;
+      min-height: 50px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px 22px;
+      border: 2px solid var(--green-dark);
+      border-radius: 3px;
+      font-weight: 850;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    .primary-btn {
+      color: white;
+      background: var(--green-dark);
+      box-shadow: 5px 5px 0 var(--lime);
+    }
+    .secondary-btn { color: var(--green-dark); background: transparent; }
+    .primary-btn:hover, .secondary-btn:hover { transform: translate(-2px, -2px); }
+    .primary-btn:hover { box-shadow: 8px 8px 0 var(--lime); }
+    .primary-btn:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .briefing {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      max-width: 820px;
+      margin: 28px 0 34px;
+      padding: 18px 20px;
+      border-left: 6px solid var(--orange);
+      background: #fff7e7;
+    }
+    .briefing strong { display: block; margin-bottom: 3px; }
+    .briefing-icon { font-size: 26px; line-height: 1; }
+
+    .decision-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, .72fr) minmax(420px, 1.28fr);
+      gap: clamp(28px, 5vw, 64px);
+      align-items: start;
+    }
+    .decision-panel { position: sticky; top: 108px; }
+    .question-group {
+      margin: 0 0 26px;
+      padding: 0;
+      border: 0;
+    }
+    .question-group legend {
+      width: 100%;
+      margin-bottom: 10px;
+      font-weight: 850;
+    }
+    .choice-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .choice-btn {
+      min-height: 52px;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--paper-2);
+      font-weight: 800;
+    }
+    .choice-btn:hover { border-color: var(--green); }
+    .choice-btn.is-selected {
+      border: 2px solid var(--green-dark);
+      color: white;
+      background: var(--green-dark);
+    }
+    .choice-btn .arrow { margin-right: 5px; font-size: 22px; }
+
+    .market-stage {
+      overflow: hidden;
+      min-height: 520px;
+      border: 1px solid var(--ink);
+      background: var(--paper-2);
+      box-shadow: var(--shadow);
+    }
+    .market-awning {
+      height: 24px;
+      background: repeating-linear-gradient(90deg, var(--orange) 0 40px, #fff7e7 40px 80px);
+      border-bottom: 1px solid var(--ink);
+    }
+    .market-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 24px 16px;
+    }
+    .market-top p { margin: 0; color: var(--muted); }
+    .price-board {
+      min-width: 142px;
+      padding: 10px 15px;
+      color: var(--lime);
+      background: var(--ink);
+      text-align: center;
+    }
+    .price-board small { display: block; color: #e7eee8; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .price-board strong { font-family: var(--display); font-size: 35px; line-height: 1; }
+
+    .shelf {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin: 8px 24px 28px;
+      padding: 18px 16px 25px;
+      border-bottom: 12px solid #654a35;
+      background: #efe4cf;
+    }
+    .box {
+      aspect-ratio: 1 / .78;
+      padding: 6px;
+      border: 1px solid #ab6b42;
+      background: #db995f;
+      opacity: 1;
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .box::after {
+      display: block;
+      width: 56%;
+      height: 14%;
+      margin: 38% auto 0;
+      content: "";
+      background: #f6dc8d;
+    }
+    .box.is-gone { opacity: .12; transform: scale(.82); }
+
+    .crowd { display: flex; min-height: 118px; align-items: flex-end; padding: 0 24px; }
+    .person {
+      position: relative;
+      width: 38px;
+      height: 58px;
+      margin-right: -4px;
+      border-radius: 19px 19px 7px 7px;
+      background: var(--blue);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    .person:nth-child(3n) { height: 67px; background: var(--orange); }
+    .person:nth-child(4n) { background: var(--green); }
+    .person:nth-child(5n) { height: 52px; background: #d5b03b; }
+    .person::before {
+      position: absolute;
+      top: -24px;
+      left: 8px;
+      width: 22px;
+      height: 22px;
+      content: "";
+      border: 1px solid rgba(20,37,31,.35);
+      border-radius: 50%;
+      background: #c98762;
+    }
+    .person.is-leaving { opacity: .14; transform: translateX(-18px); }
+    .market-ticker {
+      min-height: 47px;
+      padding: 13px 24px;
+      color: white;
+      background: var(--green-dark);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .result-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 26px;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+    .result-stat { padding: 18px; border-right: 1px solid var(--line); }
+    .result-stat:last-child { border-right: 0; }
+    .result-stat small { display: block; color: var(--muted); font-weight: 700; }
+    .result-stat strong { font-family: var(--display); font-size: 31px; }
+
+    .feedback {
+      margin-top: 22px;
+      padding: 20px;
+      border-left: 6px solid var(--green);
+      background: #e7f1e3;
+    }
+    .feedback h3 { margin-bottom: 5px; }
+    .feedback p { margin-bottom: 0; }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 34px 0 24px;
+    }
+    .plan {
+      position: relative;
+      min-height: 250px;
+      padding: 24px 20px 20px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--paper-2);
+      text-align: left;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .plan:hover { z-index: 2; border-color: var(--green); transform: translateY(-5px); }
+    .plan.is-selected { border: 3px solid var(--green-dark); background: #edf5e9; }
+    .plan-tag {
+      display: inline-block;
+      margin-bottom: 28px;
+      padding: 4px 8px;
+      color: var(--green-dark);
+      background: var(--lime);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .plan h3 { font-size: 25px; }
+    .plan p { color: var(--muted); }
+    .plan-meta { position: absolute; right: 20px; bottom: 16px; left: 20px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 850; }
+
+    .seller-result {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: center;
+      margin: 24px 0;
+      padding: 28px;
+      color: white;
+      background: var(--green-dark);
+    }
+    .seller-result h3 { font-family: var(--display); font-size: 34px; font-weight: 500; }
+    .seller-result p { color: #dce9e1; }
+    .meter-row { display: grid; grid-template-columns: 100px 1fr 55px; gap: 10px; align-items: center; margin: 12px 0; font-size: 13px; font-weight: 800; }
+    .meter { height: 12px; background: rgba(255,255,255,.18); }
+    .meter > span { display: block; height: 100%; width: 0; background: var(--lime); transition: width .7s ease; }
+
+    .lab-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, .75fr) minmax(440px, 1.25fr);
+      gap: clamp(28px, 5vw, 58px);
+      align-items: start;
+    }
+    .event-card {
+      position: relative;
+      min-height: 320px;
+      padding: 30px;
+      border: 1px solid var(--ink);
+      background: var(--paper-2);
+      box-shadow: 9px 9px 0 var(--orange);
+    }
+    .event-number { color: var(--orange-dark); font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .event-card h3 { margin: 18px 0 14px; font-family: var(--display); font-size: 37px; font-weight: 500; }
+    .event-card p { color: var(--muted); font-size: 17px; }
+    .event-source { position: absolute; bottom: 25px; left: 30px; font-size: 12px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+    .forecast-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 23px 0 14px; }
+    .forecast-btn {
+      min-height: 64px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--paper-2);
+      font-weight: 850;
+    }
+    .forecast-btn:hover { border-color: var(--green); background: #eff4e8; }
+    .forecast-btn:disabled { cursor: default; opacity: .55; }
+    .forecast-btn.is-correct { border: 3px solid var(--green); background: #dfeecf; opacity: 1; }
+    .forecast-btn.is-wrong { border: 2px solid var(--red); background: #f6ddd6; opacity: 1; }
+
+    .graph-card { padding: 18px 18px 12px; border: 1px solid var(--line); background: var(--paper-2); box-shadow: var(--shadow); }
+    .graph-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 7px 8px 0; }
+    .graph-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .graph-legend { display: flex; gap: 14px; font-size: 12px; font-weight: 800; }
+    .legend-key::before { display: inline-block; width: 16px; height: 3px; margin: 0 6px 3px 0; content: ""; background: currentColor; }
+    .legend-key.demand { color: var(--blue); }
+    .legend-key.supply { color: var(--orange-dark); }
+    #marketGraph { display: block; width: 100%; height: auto; }
+    .axis { stroke: var(--ink); stroke-width: 2; }
+    .gridline { stroke: #ded8cb; stroke-width: 1; }
+    .curve { fill: none; stroke-width: 5; transition: d .55s ease, opacity .3s ease; }
+    .curve.demand { stroke: var(--blue); }
+    .curve.supply { stroke: var(--orange-dark); }
+    .curve.old { stroke-dasharray: 8 8; opacity: .24; }
+    .eq-guide { stroke: var(--green); stroke-width: 2; stroke-dasharray: 5 5; }
+    .eq-dot { fill: var(--lime); stroke: var(--green-dark); stroke-width: 4; transition: cx .55s ease, cy .55s ease; }
+    .graph-label { fill: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 700; }
+    .curve-label { font-size: 15px; font-weight: 900; }
+    .lab-feedback { min-height: 76px; margin-top: 15px; padding: 15px 17px; border-left: 5px solid var(--line); background: #f1ede4; }
+    .lab-feedback.correct { border-color: var(--green); background: #e4efdc; }
+    .lab-feedback.try { border-color: var(--orange-dark); background: #fae8de; }
+    .lab-feedback p { margin: 0; }
+
+    .score-pill { display: inline-flex; align-items: baseline; gap: 7px; margin-bottom: 20px; padding: 8px 13px; color: white; background: var(--green-dark); font-weight: 800; }
+    .score-pill strong { color: var(--lime); font-family: var(--display); font-size: 24px; }
+
+    .rulebook {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      border: 1px solid var(--ink);
+      background: var(--paper-2);
+      box-shadow: var(--shadow);
+    }
+    .rule {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      min-height: 150px;
+      padding: 24px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .rule:nth-child(2n) { border-right: 0; }
+    .rule:nth-child(n+3) { border-bottom: 0; }
+    .rule p { margin: 0; color: var(--muted); }
+    .rule-arrows { min-width: 98px; font-family: var(--display); font-size: 32px; line-height: 1.05; text-align: right; }
+    .up { color: var(--green); }
+    .down { color: var(--red); }
+
+    .takeaway {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 30px;
+      align-items: center;
+      margin-top: 30px;
+      padding: 28px 30px;
+      color: white;
+      background: var(--ink);
+    }
+    .takeaway h3 { margin-bottom: 5px; font-family: var(--display); font-size: 31px; font-weight: 500; }
+    .takeaway p { margin: 0; color: #dfe8e2; }
+
+    .footer-note { margin-top: 24px; color: var(--muted); font-size: 13px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 820px) {
+      .masthead { grid-template-columns: 1fr auto; }
+      .progress-track { grid-column: 1 / -1; grid-row: 2; }
+      .brand { font-size: 14px; }
+      .hero-grid, .decision-layout, .lab-layout, .seller-result { grid-template-columns: 1fr; }
+      .decision-panel { position: static; }
+      .plans { grid-template-columns: 1fr; }
+      .plan { min-height: 210px; }
+      .rulebook { grid-template-columns: 1fr; }
+      .rule, .rule:nth-child(2n), .rule:nth-child(n+3) { border-right: 0; border-bottom: 1px solid var(--line); }
+      .rule:last-child { border-bottom: 0; }
+      .takeaway { grid-template-columns: 1fr; }
+      .shelf { grid-template-columns: repeat(7, 1fr); gap: 5px; margin-inline: 14px; }
+    }
+
+    @media (max-width: 520px) {
+      .masthead { padding-inline: 14px; }
+      .ghost-btn { font-size: 0; }
+      .ghost-btn::after { content: "Reset"; font-size: 13px; }
+      .screen { width: min(100% - 24px, 1180px); padding-top: 35px; }
+      h1 { font-size: 52px; }
+      .choice-row, .forecast-grid, .result-strip { grid-template-columns: 1fr 1fr; }
+      .result-stat:last-child { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+      .market-top { align-items: flex-start; padding-inline: 14px; }
+      .crowd { overflow: hidden; padding-inline: 14px; }
+      .person { min-width: 32px; }
+      .graph-legend { flex-direction: column; gap: 2px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">M</span> Market Pulse</div>
+    <nav class="progress-track" aria-label="Experience progress">
+      <span class="progress-step" data-progress="1">Shopper</span>
+      <span class="progress-step" data-progress="2">Seller</span>
+      <span class="progress-step" data-progress="3">Analyst</span>
+    </nav>
+    <button class="ghost-btn" id="resetBtn" type="button">Restart experience</button>
+  </header>
+
+  <main>
+    <section class="screen is-active" id="welcome" aria-labelledby="welcomeTitle">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">A 10-minute market experiment</p>
+          <h1 id="welcomeTitle">The product is hot. The shelves are not.</h1>
+          <p class="lede">A delayed shipment hits the city’s most anticipated sneaker drop. Make choices as a shopper, a seller, and a market analyst. Watch the market answer back.</p>
+          <button class="primary-btn" id="startBtn" type="button">Enter the market <span aria-hidden="true">→</span></button>
+        </div>
+        <aside class="start-card" aria-label="Experience overview">
+          <span class="big-number">3</span>
+          <h3>lenses on one changing market</h3>
+          <ul class="mini-list">
+            <li><b>01</b> Feel a shortage</li>
+            <li><b>02</b> Respond as a seller</li>
+            <li><b>03</b> Forecast market shocks</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen" id="shopper" aria-labelledby="shopperTitle">
+      <p class="eyebrow">Act 1 · The shopper</p>
+      <h2 id="shopperTitle">Fourteen pairs. Twenty-four shoppers.</h2>
+      <p class="lede">Yesterday, this store expected 24 pairs. A shipping delay left only 14. Interest in the drop has not changed.</p>
+      <div class="briefing">
+        <span class="briefing-icon" aria-hidden="true">⚡</span>
+        <div><strong>Before the doors open</strong>Predict the direction of the next market price and the quantity that will actually be sold.</div>
+      </div>
+
+      <div class="decision-layout">
+        <div class="decision-panel">
+          <fieldset class="question-group">
+            <legend>What happens to the market price?</legend>
+            <div class="choice-row">
+              <button class="choice-btn" type="button" data-shopper-group="price" data-value="up"><span class="arrow" aria-hidden="true">↑</span> Rises</button>
+              <button class="choice-btn" type="button" data-shopper-group="price" data-value="down"><span class="arrow" aria-hidden="true">↓</span> Falls</button>
+            </div>
+          </fieldset>
+          <fieldset class="question-group">
+            <legend>What happens to quantity sold?</legend>
+            <div class="choice-row">
+              <button class="choice-btn" type="button" data-shopper-group="quantity" data-value="up"><span class="arrow" aria-hidden="true">↑</span> Rises</button>
+              <button class="choice-btn" type="button" data-shopper-group="quantity" data-value="down"><span class="arrow" aria-hidden="true">↓</span> Falls</button>
+            </div>
+          </fieldset>
+          <button class="primary-btn" id="runMarketBtn" type="button" disabled>Open the doors</button>
+        </div>
+
+        <div>
+          <div class="market-stage" aria-label="Animated market with shoppers and sneaker inventory">
+            <div class="market-awning"></div>
+            <div class="market-top">
+              <div><h3>Block 8 Sneaker Shop</h3><p>Limited release · today only</p></div>
+              <div class="price-board"><small>Market price</small><strong id="shopPrice">$90</strong></div>
+            </div>
+            <div class="shelf" id="shelf" aria-label="Fourteen boxes in stock"></div>
+            <div class="crowd" id="crowd" aria-hidden="true"></div>
+            <div class="market-ticker" id="marketTicker" aria-live="polite">Doors closed · predictions pending</div>
+          </div>
+          <div class="result-strip" id="shopperStats" hidden>
+            <div class="result-stat"><small>Price</small><strong>$90 → $126</strong></div>
+            <div class="result-stat"><small>Quantity sold</small><strong>20 → 14</strong></div>
+            <div class="result-stat"><small>Pairs left</small><strong>0</strong></div>
+          </div>
+          <div class="feedback" id="shopperFeedback" hidden tabindex="-1"></div>
+          <div style="margin-top:22px"><button class="primary-btn" id="toSellerBtn" type="button" hidden>Step behind the counter <span aria-hidden="true">→</span></button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="seller" aria-labelledby="sellerTitle">
+      <p class="eyebrow">Act 2 · The seller</p>
+      <h2 id="sellerTitle">The price is a message. What will you do with it?</h2>
+      <p class="lede">At $126, customers are still lining up. You control next week’s production plan. Each option changes how many pairs reach the market.</p>
+
+      <div class="plans" role="group" aria-label="Choose a production plan">
+        <button class="plan" type="button" data-plan="hold">
+          <span class="plan-tag">Low risk</span>
+          <h3>Hold steady</h3>
+          <p>Keep the regular shift. Protect your costs and release 14 pairs again.</p>
+          <span class="plan-meta">14 pairs · regular cost</span>
+        </button>
+        <button class="plan" type="button" data-plan="overtime">
+          <span class="plan-tag">Fast response</span>
+          <h3>Add overtime</h3>
+          <p>Pay the evening crew to make four more pairs while interest is high.</p>
+          <span class="plan-meta">18 pairs · higher cost</span>
+        </button>
+        <button class="plan" type="button" data-plan="expand">
+          <span class="plan-tag">Big swing</span>
+          <h3>Expand capacity</h3>
+          <p>Contract a second workshop and bring 24 pairs to next week’s drop.</p>
+          <span class="plan-meta">24 pairs · unsold risk</span>
+        </button>
+      </div>
+
+      <div class="seller-result" id="sellerResult" hidden tabindex="-1">
+        <div>
+          <p class="eyebrow" style="color:var(--lime)">Next week’s market</p>
+          <h3 id="sellerResultTitle"></h3>
+          <p id="sellerResultText"></p>
+        </div>
+        <div>
+          <div class="meter-row"><span>Pairs offered</span><span class="meter"><span id="supplyMeter"></span></span><strong id="supplyValue"></strong></div>
+          <div class="meter-row"><span>Market price</span><span class="meter"><span id="priceMeter"></span></span><strong id="priceValue"></strong></div>
+          <div class="meter-row"><span>Pairs sold</span><span class="meter"><span id="soldMeter"></span></span><strong id="soldValue"></strong></div>
+        </div>
+      </div>
+
+      <div class="feedback" id="sellerInsight" hidden>
+        <h3>Notice the chain reaction</h3>
+        <p id="sellerInsightText"></p>
+      </div>
+      <div style="margin-top:24px"><button class="primary-btn" id="toLabBtn" type="button" hidden>Enter the shock lab <span aria-hidden="true">→</span></button></div>
+    </section>
+
+    <section class="screen" id="lab" aria-labelledby="labTitle">
+      <p class="eyebrow">Act 3 · The analyst</p>
+      <h2 id="labTitle">Read the shock. Forecast the market.</h2>
+      <p class="lede">Four headlines are about to hit. For each one, choose the new direction of market price and quantity before the graph reveals the result.</p>
+
+      <div class="score-pill" aria-live="polite">Forecast score <strong id="liveScore">0</strong><span>/ 4</span></div>
+      <div class="lab-layout">
+        <div>
+          <article class="event-card" aria-live="polite">
+            <span class="event-number" id="eventNumber">Headline 1 of 4</span>
+            <h3 id="eventTitle"></h3>
+            <p id="eventDescription"></p>
+            <span class="event-source" id="eventSource"></span>
+          </article>
+          <div class="forecast-grid" id="forecastGrid" aria-label="Forecast price and quantity directions">
+            <button class="forecast-btn" type="button" data-forecast="up-up">Price ↑ · Quantity ↑</button>
+            <button class="forecast-btn" type="button" data-forecast="up-down">Price ↑ · Quantity ↓</button>
+            <button class="forecast-btn" type="button" data-forecast="down-up">Price ↓ · Quantity ↑</button>
+            <button class="forecast-btn" type="button" data-forecast="down-down">Price ↓ · Quantity ↓</button>
+          </div>
+          <button class="secondary-btn" id="nextEventBtn" type="button" hidden>Next headline <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="graph-card">
+          <div class="graph-head">
+            <div><h3>Market map</h3><p>Intersection = the market’s meeting point</p></div>
+            <div class="graph-legend" aria-label="Graph legend"><span class="legend-key demand">Demand</span><span class="legend-key supply">Supply</span></div>
+          </div>
+          <svg id="marketGraph" viewBox="0 0 560 380" role="img" aria-labelledby="graphTitle graphDesc">
+            <title id="graphTitle">Supply and demand market graph</title>
+            <desc id="graphDesc">A demand line slopes down and a supply line slopes up. Their intersection shows market price and quantity.</desc>
+            <line class="gridline" x1="70" y1="100" x2="520" y2="100"></line>
+            <line class="gridline" x1="70" y1="170" x2="520" y2="170"></line>
+            <line class="gridline" x1="70" y1="240" x2="520" y2="240"></line>
+            <line class="axis" x1="70" y1="30" x2="70" y2="315"></line>
+            <line class="axis" x1="70" y1="315" x2="530" y2="315"></line>
+            <text class="graph-label" x="18" y="40">PRICE</text>
+            <text class="graph-label" x="426" y="355">QUANTITY</text>
+            <path class="curve demand old" id="oldDemand"></path>
+            <path class="curve supply old" id="oldSupply"></path>
+            <path class="curve demand" id="newDemand"></path>
+            <path class="curve supply" id="newSupply"></path>
+            <line class="eq-guide" id="eqHorizontal" x1="70"></line>
+            <line class="eq-guide" id="eqVertical" y2="315"></line>
+            <circle class="eq-dot" id="eqDot" r="9"></circle>
+            <text class="curve-label" x="475" y="78" fill="#247ba0">D</text>
+            <text class="curve-label" x="475" y="286" fill="#a74425">S</text>
+          </svg>
+          <div class="lab-feedback" id="labFeedback" aria-live="polite"><p>Choose a forecast to reveal the market’s response.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="debrief" aria-labelledby="debriefTitle">
+      <p class="eyebrow">Pattern unlocked</p>
+      <h2 id="debriefTitle">You found the market’s rulebook.</h2>
+      <p class="lede">Price and quantity move to a new meeting point when either side of the market changes. Your job is to identify which side moved, then trace the new intersection.</p>
+      <div class="score-pill">Your forecast score <strong id="finalScore">0</strong><span>/ 6</span></div>
+
+      <div class="rulebook">
+        <article class="rule">
+          <div><h3>Demand increases</h3><p>More buyers want the product at every price.</p></div>
+          <div class="rule-arrows"><span class="up">P ↑</span><br><span class="up">Q ↑</span></div>
+        </article>
+        <article class="rule">
+          <div><h3>Demand decreases</h3><p>Fewer buyers want the product at every price.</p></div>
+          <div class="rule-arrows"><span class="down">P ↓</span><br><span class="down">Q ↓</span></div>
+        </article>
+        <article class="rule">
+          <div><h3>Supply increases</h3><p>Sellers can offer more of the product at every price.</p></div>
+          <div class="rule-arrows"><span class="down">P ↓</span><br><span class="up">Q ↑</span></div>
+        </article>
+        <article class="rule">
+          <div><h3>Supply decreases</h3><p>Sellers can offer less of the product at every price.</p></div>
+          <div class="rule-arrows"><span class="up">P ↑</span><br><span class="down">Q ↓</span></div>
+        </article>
+      </div>
+
+      <div class="takeaway">
+        <div><h3>Your forecasting move</h3><p>Ask “What changed first: buyers’ willingness to buy, or sellers’ ability to sell?” Then move that curve and read the new price–quantity intersection.</p></div>
+        <button class="primary-btn" id="replayBtn" type="button">Play again</button>
+      </div>
+      <p class="footer-note">Market Pulse uses simplified single-shift scenarios so each cause-and-effect pattern is visible. Real markets can experience several changes at once.</p>
+    </section>
+  </main>
+
+  <div class="sr-only" id="announcer" aria-live="assertive"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const state = {
+        shopper: { price: null, quantity: null, scored: false },
+        stageScore: 0,
+        labScore: 0,
+        eventIndex: 0,
+        eventAnswered: false
+      };
+
+      const events = [
+        {
+          title: 'A superstar wears the sneaker on tour.',
+          description: 'Millions of fans now want the same pair. Production capacity has not changed.',
+          source: 'Demand-side headline',
+          answer: 'up-up',
+          shift: 'demand-up',
+          explanation: 'Interest increased, so demand shifted right. The new intersection has a higher price and a higher quantity.'
+        },
+        {
+          title: 'The second workshop comes online.',
+          description: 'A new production process lets sellers bring more pairs to market at every price. Buyer interest is steady.',
+          source: 'Supply-side headline',
+          answer: 'down-up',
+          shift: 'supply-up',
+          explanation: 'Production capacity increased, so supply shifted right. The new intersection has a lower price and a higher quantity.'
+        },
+        {
+          title: 'A factory fire halts production.',
+          description: 'No one is hurt, but the main facility will ship far fewer pairs this month. Buyer interest is unchanged.',
+          source: 'Supply-side headline',
+          answer: 'up-down',
+          shift: 'supply-down',
+          explanation: 'Production fell, so supply shifted left. The new intersection has a higher price and a lower quantity.'
+        },
+        {
+          title: 'A rival releases the next must-have shoe.',
+          description: 'Many shoppers switch their attention to the substitute. Sellers’ production conditions are unchanged.',
+          source: 'Demand-side headline',
+          answer: 'down-down',
+          shift: 'demand-down',
+          explanation: 'Buyer interest fell, so demand shifted left. The new intersection has a lower price and a lower quantity.'
+        }
+      ];
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const announcer = $('#announcer');
+
+      function announce(message) {
+        announcer.textContent = '';
+        window.setTimeout(() => { announcer.textContent = message; }, 30);
+      }
+
+      function showScreen(id, step = 0) {
+        $$('.screen').forEach(screen => screen.classList.toggle('is-active', screen.id === id));
+        $$('.progress-step').forEach((item, index) => {
+          const n = index + 1;
+          item.classList.toggle('is-active', n === step);
+          item.classList.toggle('is-done', n < step || id === 'debrief');
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const heading = $(`#${id} h1, #${id} h2`);
+        if (heading) window.setTimeout(() => heading.setAttribute('tabindex', '-1') || heading.focus(), 100);
+      }
+
+      function buildMarket() {
+        const shelf = $('#shelf');
+        const crowd = $('#crowd');
+        shelf.innerHTML = '';
+        crowd.innerHTML = '';
+        for (let i = 0; i < 14; i += 1) {
+          const box = document.createElement('span');
+          box.className = 'box';
+          box.setAttribute('aria-hidden', 'true');
+          shelf.appendChild(box);
+        }
+        for (let i = 0; i < 24; i += 1) {
+          const person = document.createElement('span');
+          person.className = 'person';
+          crowd.appendChild(person);
+        }
+      }
+
+      function resetExperience() {
+        state.shopper = { price: null, quantity: null, scored: false };
+        state.stageScore = 0;
+        state.labScore = 0;
+        state.eventIndex = 0;
+        state.eventAnswered = false;
+        $$('.choice-btn, .plan, .forecast-btn').forEach(button => {
+          button.classList.remove('is-selected', 'is-correct', 'is-wrong');
+          button.disabled = false;
+        });
+        $('#runMarketBtn').disabled = true;
+        $('#shopPrice').textContent = '$90';
+        $('#marketTicker').textContent = 'Doors closed · predictions pending';
+        $('#shopperStats').hidden = true;
+        $('#shopperFeedback').hidden = true;
+        $('#toSellerBtn').hidden = true;
+        $('#sellerResult').hidden = true;
+        $('#sellerInsight').hidden = true;
+        $('#toLabBtn').hidden = true;
+        $('#nextEventBtn').hidden = true;
+        buildMarket();
+        showScreen('welcome', 0);
+      }
+
+      function runShopperMarket() {
+        $('#runMarketBtn').disabled = true;
+        $$('.choice-btn').forEach(button => { button.disabled = true; });
+        const priceEl = $('#shopPrice');
+        const ticker = $('#marketTicker');
+        const priceSteps = [96, 104, 113, 121, 126];
+        ticker.textContent = 'Doors open · offers are coming in…';
+
+        priceSteps.forEach((price, index) => {
+          window.setTimeout(() => {
+            priceEl.textContent = `$${price}`;
+            ticker.textContent = index < 4
+              ? `${24 - index * 2} shoppers remain · price adjusts to $${price}`
+              : 'Market settles · 14 pairs sold at $126';
+          }, 400 + index * 430);
+        });
+
+        $$('.box').forEach((box, index) => {
+          window.setTimeout(() => box.classList.add('is-gone'), 850 + index * 95);
+        });
+        $$('.person').slice(14).forEach((person, index) => {
+          window.setTimeout(() => person.classList.add('is-leaving'), 900 + index * 120);
+        });
+
+        window.setTimeout(() => {
+          const priceCorrect = state.shopper.price === 'up';
+          const quantityCorrect = state.shopper.quantity === 'down';
+          state.stageScore = Number(priceCorrect) + Number(quantityCorrect);
+          state.shopper.scored = true;
+          $('#shopperStats').hidden = false;
+          const parts = [];
+          parts.push(priceCorrect ? 'You correctly anticipated the price rise.' : 'The price rose because fewer pairs had to ration unchanged buyer interest.');
+          parts.push(quantityCorrect ? 'You also caught that fewer pairs could be sold.' : 'Quantity sold fell because only 14 pairs reached the market.');
+          $('#shopperFeedback').innerHTML = `<h3>${state.stageScore === 2 ? 'Sharp forecast.' : 'Now the pattern is visible.'}</h3><p>${parts.join(' ')}</p>`;
+          $('#shopperFeedback').hidden = false;
+          $('#toSellerBtn').hidden = false;
+          $('#shopperFeedback').focus();
+          announce(`Market settled at 126 dollars with 14 pairs sold. You earned ${state.stageScore} of 2 forecast points.`);
+        }, 2850);
+      }
+
+      const planResults = {
+        hold: {
+          title: 'The shortage lingers.',
+          text: 'With only 14 pairs offered again, the high price barely moves. Some willing buyers still leave empty-handed.',
+          supply: 14, price: 124, sold: 14,
+          insight: 'Keeping output scarce holds the price near its peak, but total trades remain low.'
+        },
+        overtime: {
+          title: 'More pairs reach more buyers.',
+          text: 'Four additional pairs take pressure off the line. The price eases, while the number of completed trades rises.',
+          supply: 18, price: 108, sold: 18,
+          insight: 'The high price gave you an incentive to produce more. As supply expanded, price fell and quantity traded rose.'
+        },
+        expand: {
+          title: 'The shelves finally breathe.',
+          text: 'The larger release satisfies nearly every buyer. Competition among sellers pushes the price down, and two pairs remain.',
+          supply: 24, price: 91, sold: 22,
+          insight: 'A large supply increase lowers the market price and raises quantity traded—but expanding too far can create unsold inventory.'
+        }
+      };
+
+      function selectPlan(key, button) {
+        const result = planResults[key];
+        $$('.plan').forEach(plan => plan.classList.toggle('is-selected', plan === button));
+        $('#sellerResultTitle').textContent = result.title;
+        $('#sellerResultText').textContent = result.text;
+        $('#supplyValue').textContent = result.supply;
+        $('#priceValue').textContent = `$${result.price}`;
+        $('#soldValue').textContent = result.sold;
+        $('#sellerInsightText').textContent = result.insight;
+        $('#sellerResult').hidden = false;
+        $('#sellerInsight').hidden = false;
+        $('#toLabBtn').hidden = false;
+        window.setTimeout(() => {
+          $('#supplyMeter').style.width = `${result.supply / 24 * 100}%`;
+          $('#priceMeter').style.width = `${result.price / 140 * 100}%`;
+          $('#soldMeter').style.width = `${result.sold / 24 * 100}%`;
+        }, 40);
+        $('#sellerResult').focus();
+        announce(`${result.title} ${result.supply} pairs offered, market price ${result.price} dollars, ${result.sold} pairs sold.`);
+      }
+
+      const graph = {
+        x(q) { return 70 + (q / 100) * 450; },
+        y(p) { return 315 - (p / 220) * 275; },
+        demandPath(a) {
+          const pAtZero = a / .35;
+          const qAtZero = a;
+          return `M ${this.x(0)} ${this.y(Math.min(pAtZero, 220))} L ${this.x(Math.min(qAtZero, 100))} ${this.y(0)}`;
+        },
+        supplyPath(c) {
+          const minVisiblePrice = c < 0 ? -c / .25 : 0;
+          const qAtZero = Math.max(c + .25 * minVisiblePrice, 0);
+          const qAtTop = Math.min(c + .25 * 220, 100);
+          return `M ${this.x(qAtZero)} ${this.y(minVisiblePrice)} L ${this.x(qAtTop)} ${this.y(220)}`;
+        },
+        equilibrium(a, c) {
+          const p = (a - c) / .6;
+          return { p, q: a - .35 * p };
+        }
+      };
+
+      function updateGraph(shift = 'base', reveal = false) {
+        const baseA = 90;
+        const baseC = 10;
+        let a = baseA;
+        let c = baseC;
+        if (shift === 'demand-up') a = 110;
+        if (shift === 'demand-down') a = 74;
+        if (shift === 'supply-up') c = 25;
+        if (shift === 'supply-down') c = -5;
+        const currentA = reveal ? a : baseA;
+        const currentC = reveal ? c : baseC;
+        const eq = graph.equilibrium(currentA, currentC);
+        $('#oldDemand').setAttribute('d', graph.demandPath(baseA));
+        $('#oldSupply').setAttribute('d', graph.supplyPath(baseC));
+        $('#newDemand').setAttribute('d', graph.demandPath(currentA));
+        $('#newSupply').setAttribute('d', graph.supplyPath(currentC));
+        const cx = graph.x(eq.q);
+        const cy = graph.y(eq.p);
+        $('#eqDot').setAttribute('cx', cx);
+        $('#eqDot').setAttribute('cy', cy);
+        $('#eqHorizontal').setAttribute('x2', cx);
+        $('#eqHorizontal').setAttribute('y1', cy);
+        $('#eqHorizontal').setAttribute('y2', cy);
+        $('#eqVertical').setAttribute('x1', cx);
+        $('#eqVertical').setAttribute('x2', cx);
+        $('#eqVertical').setAttribute('y1', cy);
+        const event = events[state.eventIndex];
+        $('#graphDesc').textContent = reveal
+          ? `The ${event.shift.startsWith('demand') ? 'demand' : 'supply'} line shifts ${event.shift.endsWith('up') ? 'right' : 'left'}, moving market price and quantity to a new intersection.`
+          : 'The graph shows the starting demand and supply lines meeting at the current market price and quantity.';
+      }
+
+      function renderEvent() {
+        const event = events[state.eventIndex];
+        state.eventAnswered = false;
+        $('#eventNumber').textContent = `Headline ${state.eventIndex + 1} of ${events.length}`;
+        $('#eventTitle').textContent = event.title;
+        $('#eventDescription').textContent = event.description;
+        $('#eventSource').textContent = event.source;
+        $$('.forecast-btn').forEach(button => {
+          button.disabled = false;
+          button.classList.remove('is-correct', 'is-wrong');
+        });
+        $('#nextEventBtn').hidden = true;
+        $('#labFeedback').className = 'lab-feedback';
+        $('#labFeedback').innerHTML = '<p>Choose a forecast to reveal the market’s response.</p>';
+        updateGraph('base', false);
+      }
+
+      function answerForecast(answer, button) {
+        if (state.eventAnswered) return;
+        state.eventAnswered = true;
+        const event = events[state.eventIndex];
+        const correct = answer === event.answer;
+        if (correct) state.labScore += 1;
+        $('#liveScore').textContent = state.labScore;
+        $$('.forecast-btn').forEach(item => {
+          item.disabled = true;
+          if (item.dataset.forecast === event.answer) item.classList.add('is-correct');
+        });
+        if (!correct) button.classList.add('is-wrong');
+        updateGraph(event.shift, true);
+        $('#labFeedback').className = `lab-feedback ${correct ? 'correct' : 'try'}`;
+        $('#labFeedback').innerHTML = `<p><strong>${correct ? 'Forecast confirmed.' : 'Watch the intersection.'}</strong> ${event.explanation}</p>`;
+        $('#nextEventBtn').textContent = state.eventIndex === events.length - 1 ? 'See my rulebook →' : 'Next headline →';
+        $('#nextEventBtn').hidden = false;
+        announce(`${correct ? 'Correct.' : 'Not quite.'} ${event.explanation}`);
+      }
+
+      function nextEvent() {
+        if (state.eventIndex < events.length - 1) {
+          state.eventIndex += 1;
+          renderEvent();
+          $('#eventTitle').focus?.();
+        } else {
+          $('#finalScore').textContent = state.stageScore + state.labScore;
+          showScreen('debrief', 4);
+        }
+      }
+
+      $$('.choice-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          const group = button.dataset.shopperGroup;
+          state.shopper[group] = button.dataset.value;
+          $$(`[data-shopper-group="${group}"]`).forEach(item => item.classList.toggle('is-selected', item === button));
+          $('#runMarketBtn').disabled = !(state.shopper.price && state.shopper.quantity);
+        });
+      });
+
+      $$('.plan').forEach(button => button.addEventListener('click', () => selectPlan(button.dataset.plan, button)));
+      $$('.forecast-btn').forEach(button => button.addEventListener('click', () => answerForecast(button.dataset.forecast, button)));
+      $('#startBtn').addEventListener('click', () => showScreen('shopper', 1));
+      $('#runMarketBtn').addEventListener('click', runShopperMarket);
+      $('#toSellerBtn').addEventListener('click', () => showScreen('seller', 2));
+      $('#toLabBtn').addEventListener('click', () => { state.eventIndex = 0; state.labScore = 0; $('#liveScore').textContent = '0'; renderEvent(); showScreen('lab', 3); });
+      $('#nextEventBtn').addEventListener('click', nextEvent);
+      $('#resetBtn').addEventListener('click', resetExperience);
+      $('#replayBtn').addEventListener('click', resetExperience);
+
+      buildMarket();
+      updateGraph('base', false);
+    })();
+  </script>
+</body>
+</html>
