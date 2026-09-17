@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDUGamification</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <p class="eyebrow">EDUGamification</p>
+      <h1>Interactive learning experiences in one place</h1>
+      <p class="hero__text">
+        Use this site as a simple GitHub Pages hub for prototypes, classroom activities,
+        and evaluation-ready learning experiences.
+      </p>
+      <a class="button" href="#creations">Browse creations</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="section__header">
+        <h2>How this site works</h2>
+        <p>
+          Add each learning experience to its own folder inside <code>creations/</code>,
+          then register it in <code>creations.json</code> so it appears on the homepage.
+        </p>
+      </div>
+      <div class="steps">
+        <article class="card card--muted">
+          <h3>1. Add a project</h3>
+          <p>Create a folder like <code>creations/my-activity/</code> and place your HTML files there.</p>
+        </article>
+        <article class="card card--muted">
+          <h3>2. Update the catalog</h3>
+          <p>Add its title, description, and link in <code>creations.json</code>.</p>
+        </article>
+        <article class="card card--muted">
+          <h3>3. Publish with GitHub Pages</h3>
+          <p>Enable Pages from the repository settings and use the main branch root as the source.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="creations">
+      <div class="section__header">
+        <h2>Available creations</h2>
+        <p>Start with the sample below, then replace or expand it with your own learning experiences.</p>
+      </div>
+      <div class="grid" id="creations-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Built for hosting and reviewing online learning experiences with GitHub Pages.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
